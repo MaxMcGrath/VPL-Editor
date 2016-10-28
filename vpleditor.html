@@ -1,0 +1,1264 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+body{
+	padding:0px;
+	margin:0px;
+	//overflow:hidden;
+	word-wrap: break-word;
+	white-space: nowrap;
+	background-color: #3d3d5c;
+	color:white;
+	font-size:15px;
+}
+
+.selectedColor{
+	padding: 3px;
+	background-color: #666699;
+}
+
+.notSelectedColor{
+	padding: 3px;
+	background-color: #3d3d5c;
+}
+
+.moveColor{
+	cursor:pointer;
+	min-width:15px;
+	width:15px;
+	height:8px;
+	background-color: green;
+	font-size: 6px;
+	text-align: center;
+}
+
+.moveColor:hover{
+	background-color: LightGreen;
+}
+
+.copyColor{
+	cursor:pointer;
+	min-width:15px;
+	width:15px;
+	height:8px;
+	background-color: blue;
+	font-size: 6px;
+	text-align: center;
+	font-weight: bold;
+}
+
+.copyColor:hover{
+	background-color: LightBlue;
+}
+
+.deleteColor{
+	cursor:pointer;
+	min-width:15px;
+	width:15px;
+	height:8px;
+	background-color: red;
+	font-size: 6px;
+	text-align: center;
+	border-top-right-radius: 5px;
+	border-bottom-right-radius: 5px;
+}
+
+.deleteColor:hover{
+	background-color: LightCoral;
+}
+
+.colorEditSelectionSection{
+	vertical-align: text-top;
+	text-align: center;
+	width:25%;
+}
+
+</style>
+</head>
+<body>
+
+<div id="data" style="font-size:1px;color:white;"></div>
+<div id="dataVPL" style="font-size:1px;color:white;"></div>
+
+<table>
+	<tr>
+		<td style="width:50% ; border: 1px solid black;">
+			<div style="position: absolute;">
+				<b>3d View Controls</b>
+				<br>
+				Left Mouse Button: Rotate
+				<br>
+				Middle Mouse Wheel: Zoom
+				<br>
+				Right Mouse Button: Pan
+			</div>
+			<div id="renderArea"></div>
+		</td>
+		<td style="width:50% ; border: 1px solid black;">
+			<table style='width:100%;'>
+				<tr>
+					<td class='colorEditSelectionSection'>
+						Color Pallet
+					</td>
+					<td class='colorEditSelectionSection'>
+						<span id="titleColors">
+							<input type="radio" id="selected" name="selected" value="colors" onchange="setColorTable()" checked>
+							Colors Selected
+						</span>
+					</td>
+					<td class='colorEditSelectionSection'>
+						<span id="titleGradient">
+							<input type="radio" id="selected" name="selected" value="gradient" onchange="setColorTable()">
+							Gradient Colors
+						</span>
+					</td>
+				</tr>
+				<tr>
+					<td class='colorEditSelectionSection'>
+						<div id="palletArea" style='text-align: center;width:100%;'></div>
+					</td>
+					<td class='colorEditSelectionSection'>
+						<div id="selectedColor" style='width:100%;text-align: center;border: 1px solid black;'>
+							Nothing<br>Selected
+						</div>
+					</td>
+					<td class='colorEditSelectionSection'>
+						<div id="selectedHotSpot" style='width:100%;text-align: center;border: 1px solid black;'>
+							Nothing<br>Selected
+						</div>
+					</td>
+					<td class='colorEditSelectionSection'>
+						Colors Controls
+						<br>
+						<button onclick="clearColorSelect()" style="width:100%;">Clear Selection</button>
+						<br>
+						<button onclick="indexSortColorSelect()" style="width:100%;">Sort Colors Index</button>
+						<br>
+						<button onclick="RBGSortColorSelect()" style="width:100%;">Sort Colors RBG</button>
+						<br>
+						<button onclick="showVPL()" style="width:100%;">Show Selected VPL</button>
+						<br><br><br>
+						Gradient Controls
+						<br>
+						<button onclick="clearGranSelect()" style="width:100%;">Clear Selection</button>
+						<br>
+						<button onclick="copyColorSelected()" style="width:100%;">Copy Colors Selected</button>
+						<br>
+						<button onclick="indexSortGranSelect()" style="width:100%;">Sort Colors Index</button>
+						<br>
+						<button onclick="RBGSortGranSelect()" style="width:100%;">Sort Colors RBG</button>
+						<br><br><br>
+						Calculate Gradient
+						<br>
+						<button onclick="setSelectedGranColors()" style="width:100%;">Set Gradient Colors</button>
+					</td>
+				</tr>
+			</table>
+		</td>
+	</tr>
+	<tr>
+		<td style="width:50% ; border: 1px solid black;">
+			<table style="width:100%;">
+				<tr>
+					<td style="width:100%;">
+						Curve Starting Point
+						<br>
+						<input id="topBar" type="range" style="width:100%;" min="-5" max="32" value="0" onchange="changeColorGran()">
+					</td>
+				<tr>
+				</tr>
+					<td style="width:100%;">
+						<div id="dataHotSpot"></div>
+					</td>
+				<tr>
+				</tr>
+					<td style="width:100%;">
+						Curve End Point
+						<br>
+						<input id="bottomBar" type="range" style="width:100%;" min="0" max="37" value="32" onchange="changeColorGran()">
+						<br>
+						Curve Control Points
+						<br>
+						<input id="intensityBar" type="range" style="width:100%;" min="0" max="32" value="8" onchange="changeColorGran()">
+						<br>
+						<input id="intensity2Bar" type="range" style="width:100%;" min="0" max="32" value="24" onchange="changeColorGran()">
+					</td>
+				</tr>
+			</table>
+		</td>
+		<td style="width:50% ; border: 1px solid black;">
+			<table style="width:100%;">
+				<tr>
+					<td style="width:50%;">
+						<button onclick="saveVPLData()" style="width:75%;">Save Changes To VPL Data</button>
+						<br><br>
+						<div style="width:75%;text-align: center;">Brush Tools:</div>
+						<button id="brushOnOff" onclick="useBrushOnOff()" style="width:75%;">Use Lighten/Darken Brush</button>
+						<br>
+						Brush Strength
+						<br>
+						<input id="brushStrength" type="range" style="width:75%;" min="-10" max="10" value="1">
+						<br><br>
+						<!-- Brush Size -->
+						<!-- <br> -->
+						<!-- <input id="brushSize" type="range" style="width:75%;" min="1" max="3" value="1"> -->
+						<button id="colorOnOff" onclick="useColorOnOff()" style="width:75%;">Use Color Brush</button>
+						<br>
+						<div id="selectColorPaint"><select style="width:75%;"></select></div>
+						<br><br>
+						<div style="width:75%;text-align: center;">Curve Options:</div>
+						<button onclick="showCurveOnOff()" style="width:75%;">Show Curve On/Off</button>
+						<br>
+						Specular Highlight
+						<br>
+						<input id="hotSpotShift" type="range" style="width:75%;" min="1" max="100" value="1" onchange="changeColorGran()">
+						<br>
+						Veritical Shift
+						<br>
+						<input id="verShift" type="range" style="width:75%;" min="0" max="100" value="0" onchange="changeColorGran()">
+						<br>
+						Noise Level
+						<br>
+						<input id="noiseOnOff" type="range" style="width:75%;" min="0" max="5" value="0" onchange="changeColorGran()">
+						<br>
+						Brightness Level
+						<br>
+						<input id="brightnessLevel" type="range" style="width:75%;" min="-10" max="10" value="0" onchange="changeColorGran()">
+					</td>
+					<td style="width:50%;vertical-align: text-top;">
+						Load Custom VPL File
+						<br>
+						<input type="file" id="input" style="width:175px;" onchange="turnButtonOn()">
+						<button onclick="loadVPLFile()" id="loadVPLButton" disabled>Load File</button>
+						<br><br>
+						Load Custom Color Pallet File
+						<br>
+						<input type="file" id="inputColor" style="width:175px;" onchange="turnColorButtonOn()">
+						<button onclick="loadColorFile()" id="loadColorButton" disabled>Load File</button>
+						<br><br>
+						<button onclick="resetVPLData()" style="width:100%;">Reset VPL To Factory Data</button>
+						<br>
+						<button onclick="resetColorData()" style="width:100%;">Reset Color To Factory Data</button>
+						<br><br>
+						<button onclick="downloadFile()" style="width:100%;">Click Here To Generate VPL file download link</button>
+						<br>
+						<div id="downloadLink" style="width:100%;background-color: #a3a3c2;text-align: center;"></div>
+					</td>
+				</tr>
+			</table>
+
+		</td>
+	</tr>
+</table>
+
+<script src="jszip.min.js" ></script>
+<script src="jszip-utils.min.js" ></script>
+<script src="three.min.js"></script>
+<script src="OrbitControls.js"></script>
+
+<script  type="text/javascript" defer>
+
+var filePointer=0;
+var holdVPLHeaderData;
+var holdVPLPallet;
+var useSelectedGranColors = false;
+var colorGran=[];
+var colorSectionTable=[];
+var depth=[];
+var showCurve=false;
+var holdBrightBrushColor = document.getElementById("brushOnOff").style.backgroundColor;
+var holdBrightBrushOnOff = false;
+var holdColorBrushColor = document.getElementById("colorOnOff").style.backgroundColor;
+var holdColorBrushOnOff = false;
+var topRange;
+var bottomRange;
+var verticalRange;
+var intensityRange;
+var intensity2Range;
+var hotSpotIntensity=0;
+var verticalShift=0;
+var noiseValue=0;
+var levelAdjust=0;
+var colorSeletedFor=[];
+var hotSpotSeletedFor=[];
+var originalColorData=[];
+var originalColorLoaded=false;
+var colorData=[];
+var originalVplData=[];
+var vplData=[];
+var originalVplLoaded=false;
+var timeDelay=400;
+var dataFromBuff;
+var reader = new FileReader();
+reader.onload = function(e) {
+	dataFromBuff = reader.result;
+}
+
+function brightenLevel(){//save for edit factory vpl data
+	var levelAdjust = document.getElementById("brightnessLevel").value;
+	var lowestValue=500;
+	var highValue=0;
+
+	for(var x = 0 ; x != colorSeletedFor.length ; ++x){
+		if(lowestValue > colorSeletedFor[x]){
+			lowestValue=colorSeletedFor[x];
+		}
+		if(highValue < colorSeletedFor[x]){
+			highValue=colorSeletedFor[x];
+		}
+	}
+
+	for(var x = 0 ; x != colorSeletedFor.length ; ++x){
+		for(var y = 0 ; y != 32 ; ++y){
+			colorGran[y][x] = parseInt(colorGran[y][x]) + levelAdjust;
+			if(colorGran[y][x]<lowestValue){
+				colorGran[y][x]=lowestValue;
+			}
+			if(colorGran[y][x]>highValue){
+				colorGran[y][x]=highValue;
+			}
+		}
+	}
+
+	setSelectedVPLableData();
+}
+
+function turnButtonOn(){
+	document.getElementById("loadVPLButton").disabled = false;
+}
+
+function loadVPLFile(){
+	var selectedFile = document.getElementById('input').files[0];
+
+	reader.readAsArrayBuffer(selectedFile);
+
+	setTimeout(function(){//wait for it to load... I hate my life... >_<
+		var zipo = new JSZip();
+		zipo.file("voxels.txt", dataFromBuff);
+		var fileName = "voxels.txt";
+		var vpl = [];
+		var vplFile = new vplStructure();
+		document.getElementById('dataVPL').innerHTML = readVPL(zipo.file((fileName)), (fileName), vplFile);
+		getVLPDataFromHTMLDIV();
+		setSelectedVPLableData();
+		//changeColorGran();
+		buildVPLWheel();
+		animate();
+	},timeDelay); 
+}
+
+function turnColorButtonOn(){
+	document.getElementById("loadColorButton").disabled = false;
+}
+
+function loadColorFile(){
+	var selectedFile = document.getElementById('inputColor').files[0];
+
+	reader.readAsArrayBuffer(selectedFile);
+
+	setTimeout(function(){//wait for it to load... I hate my life... >_<
+		var zipo = new JSZip();
+		zipo.file("color.txt", dataFromBuff);
+		var fileName = "color.txt";
+		var pallets = [];
+		var palFile = new palletStructure();
+		pallets.push(readPAL(zipo.file((fileName)), (fileName), palFile));
+		document.getElementById('data').innerHTML = pallets[0].colors;
+		getColorDataFromHTMLDIV();
+		setColorTable();
+		makeColorOption();
+		setSelectedVPLableData();
+		//changeColorGran();
+		buildVPLWheel();
+		animate();
+	},timeDelay); 
+}
+
+function downloadFile(){
+	document.getElementById('downloadLink').innerHTML = "<a id='link' target='_blank' download='voxels.vpl'>Click Here To Download</a>";
+	var vplDataCollect = [];
+	
+	for(var x = 0 ; x != vplData.length ; ++x){
+		for(var y = 0 ; y != vplData[x].length ; ++y){
+			vplDataCollect.push(vplData[x][y]);
+		}
+	}
+
+	var vplDataAllSections = new Int8Array(vplDataCollect);
+
+	var file = new Blob([holdVPLHeaderData,holdVPLPallet,vplDataAllSections], {type: "octet/stream"});
+	url = URL.createObjectURL(file);
+	document.getElementById('link').href = url;
+}
+
+function palletStructure(){
+	this.name = ""; //for file/pallet name  
+	this.colors = []; //should be array Int[256][R,B,G]
+}
+
+function read1IntByte(fileData){
+	var data = parseInt(fileData.asUint8Array()[filePointer]);
+	++filePointer;
+	return data;
+}
+
+function readPAL(palData, fileName, palLoad){
+	filePointer=0;
+	var fileSize = palData.asUint8Array().length / 3;
+
+	for(var y = 0 ; y != fileSize ; ++y){
+		palLoad.colors.push([read1IntByte(palData),read1IntByte(palData),read1IntByte(palData)]);
+	}
+
+	return palLoad;
+}
+
+function vplStructure(){
+	this.dwRemapPlayerColorStart = 0;
+	this.dwRemapPlayerColorEnd = 0;
+	this.dwNumberOfSections = 0;
+	this.dwUnknown = 0;
+	this.sections = []; //should be array Int[32][256]
+}
+
+function read4BytesFlip(fileData){
+	var binToAsci = [1,256,65536,16777216];
+	var data=0;
+	for(var x=0;x!=4;++x){
+		data += parseInt(fileData.asUint8Array()[filePointer]) * binToAsci[x];
+		++filePointer;
+	}
+	return data;
+}
+
+function readVPL(vplData, fileName, vplLoad){
+	filePointer=0;
+	vplLoad.dwRemapPlayerColorStart = read4BytesFlip(vplData);
+	vplLoad.dwRemapPlayerColorEnd = read4BytesFlip(vplData);
+	vplLoad.dwNumberOfSections = read4BytesFlip(vplData);
+	vplLoad.dwUnknown = read4BytesFlip(vplData);
+
+	holdVPLHeaderData = new Int32Array([
+				vplLoad.dwRemapPlayerColorStart
+				,vplLoad.dwRemapPlayerColorEnd
+				,vplLoad.dwNumberOfSections
+				,vplLoad.dwUnknown
+				]);
+
+	var holdPallet=[];
+	for(var y = 0 ; y != (256*3) ; ++y){
+		holdPallet.push(read1IntByte(vplData));
+	}
+
+	holdVPLPallet = new Int8Array(holdPallet);
+
+	var dataHold="";
+
+	var hold = [];
+	for(var y = 0 ; y != vplLoad.dwNumberOfSections ; ++y){
+		for(var x = 0 ; x < 256 ; ++x){
+			dataHold = dataHold + read1IntByte(vplData) + ",";
+		}
+		dataHold = dataHold + "$";
+		vplLoad.sections.push(hold);
+		hold = [];
+	}
+
+	return dataHold;
+}
+
+JSZipUtils.getBinaryContent('files.zip', function(err, data){
+	var zip = new JSZip(data);
+
+	var fileName = "unittem.pal";
+	var pallets = [];
+	var palFile = new palletStructure();
+	pallets.push(readPAL(zip.file((fileName)), (fileName), palFile));
+	document.getElementById('data').innerHTML = pallets[0].colors;
+
+	var fileName = "voxels.vpl";
+	var vpl = [];
+	var vplFile = new vplStructure();
+	//vpl.push(readVPL(zip.file((fileName)), (fileName), vplFile));
+	document.getElementById('dataVPL').innerHTML = readVPL(zip.file((fileName)), (fileName), vplFile);
+});
+
+function indexSortColorSelect(){
+	var hold=0;
+
+	for(var x=0 ; x!=colorSeletedFor.length-1 ; ++x){
+		if(colorSeletedFor[x] > colorSeletedFor[x+1]){
+			hold=colorSeletedFor[x];
+			colorSeletedFor[x]=colorSeletedFor[x+1];
+			colorSeletedFor[x+1]=hold;
+			x=-1;
+		}
+	}
+	setUserColorTable();
+}
+
+function indexSortGranSelect(){
+	var hold=0;
+
+	for(var x=0 ; x!=hotSpotSeletedFor.length-1 ; ++x){
+		if(hotSpotSeletedFor[x] > hotSpotSeletedFor[x+1]){
+			hold=hotSpotSeletedFor[x];
+			hotSpotSeletedFor[x]=hotSpotSeletedFor[x+1];
+			hotSpotSeletedFor[x+1]=hold;
+			x=-1;
+		}
+	}
+	setSelectedHotSpotTable();
+}
+
+function RBGSortColorSelect(){
+	var hold=0;
+	var holdColorOne=0;
+	var holdColorTwo=0;
+
+	for(var x=0 ; x!=colorSeletedFor.length-1 ; ++x){
+		holdColorOne=colorData[colorSeletedFor[x]][0]+colorData[colorSeletedFor[x]][1]+colorData[colorSeletedFor[x]][2];
+		holdColorTwo=colorData[colorSeletedFor[x+1]][0]+colorData[colorSeletedFor[x+1]][1]+colorData[colorSeletedFor[x+1]][2];
+		if(holdColorOne < holdColorTwo){
+			hold=colorSeletedFor[x];
+			colorSeletedFor[x]=colorSeletedFor[x+1];
+			colorSeletedFor[x+1]=hold;
+			x=-1;
+		}
+	}
+	setUserColorTable();
+}
+
+function RBGSortGranSelect(){
+	var hold=0;
+	var holdColorOne=0;
+	var holdColorTwo=0;
+
+	for(var x=0 ; x!=hotSpotSeletedFor.length-1 ; ++x){
+		holdColorOne=colorData[hotSpotSeletedFor[x]][0]+colorData[hotSpotSeletedFor[x]][1]+colorData[hotSpotSeletedFor[x]][2];
+		holdColorTwo=colorData[hotSpotSeletedFor[x+1]][0]+colorData[hotSpotSeletedFor[x+1]][1]+colorData[hotSpotSeletedFor[x+1]][2];
+		if(holdColorOne < holdColorTwo){
+			hold=hotSpotSeletedFor[x];
+			hotSpotSeletedFor[x]=hotSpotSeletedFor[x+1];
+			hotSpotSeletedFor[x+1]=hold;
+			x=-1;
+		}
+	}
+	setSelectedHotSpotTable();
+}
+
+function copyColorSelected(){
+	//hotSpotSeletedFor=colorSeletedFor;//this do not work... all it did was pass referance... programing is dumb... >_<
+	hotSpotSeletedFor=[];
+	for(var x=0 ; x!=colorSeletedFor.length ; ++x){
+		hotSpotSeletedFor.push(colorSeletedFor[x]);
+	}
+	setSelectedHotSpotTable();
+	setColorTable();
+}
+
+function clearGranSelect(){
+	hotSpotSeletedFor=[];
+	setSelectedHotSpotTable();
+	setColorTable();
+}
+
+function clearColorSelect(){
+	colorSeletedFor=[];
+	setUserColorTable();
+	setColorTable();
+}
+
+function setSelectedGranColors(){
+	useSelectedGranColors = true;
+	document.getElementById("verShift").value=0;
+	document.getElementById("verShift").max=colorSeletedFor.length;
+	changeColorGran();
+}
+
+function copyGranColor(_indexToCopy){
+	hotSpotSeletedFor.push(hotSpotSeletedFor[_indexToCopy]);
+	setSelectedHotSpotTable();
+}
+
+function moveColorUp(_indexToMove){
+	if(_indexToMove>0){
+		var hold=0;
+		hold=colorSeletedFor[_indexToMove];
+		colorSeletedFor[_indexToMove]=colorSeletedFor[_indexToMove-1];
+		colorSeletedFor[_indexToMove-1]=hold;
+		setUserColorTable();
+	}
+}
+
+function moveGranUp(_indexToMove){
+	if(_indexToMove>0){
+		var hold=0;
+		hold=hotSpotSeletedFor[_indexToMove];
+		hotSpotSeletedFor[_indexToMove]=hotSpotSeletedFor[_indexToMove-1];
+		hotSpotSeletedFor[_indexToMove-1]=hold;
+		setSelectedHotSpotTable();
+	}
+}
+
+function moveColorDown(_indexToMove){
+	if(_indexToMove < colorSeletedFor.length-1){
+		var hold=0;
+		hold=colorSeletedFor[_indexToMove];
+		colorSeletedFor[_indexToMove]=colorSeletedFor[_indexToMove+1];
+		colorSeletedFor[_indexToMove+1]=hold;
+		setUserColorTable();
+	}
+}
+
+function moveGranDown(_indexToMove){
+	if(_indexToMove < hotSpotSeletedFor.length-1){
+		var hold=0;
+		hold=hotSpotSeletedFor[_indexToMove];
+		hotSpotSeletedFor[_indexToMove]=hotSpotSeletedFor[_indexToMove+1];
+		hotSpotSeletedFor[_indexToMove+1]=hold;
+		setSelectedHotSpotTable();
+	}
+}
+
+function saveVPLData(){
+	for(var x=0 ; x!=colorSeletedFor.length ; ++x){
+		for(var y=0 ; y!=32 ; ++y){
+			vplData[y][colorSeletedFor[x]] = colorGran[y][x];
+		}
+	}
+
+	buildVPLWheel();
+	animate();
+}
+
+function setUpColorGran(){
+	var pointOne=bottomRange;
+	var pointTwo=intensityRange;
+	var pointThree=topRange;
+	var pointFour=intensity2Range;
+	var shiftHotSpot=verticalRange;
+	var holdSection=[];
+	var atPoint=0;
+
+	colorSectionTable=[];
+
+	for(var x=0 ; x!=colorSeletedFor.length ; ++x){
+		holdSection=[];
+
+		//Quadratic Bézier curves
+		//atPoint = parseInt( 
+		//		( pointOne*Math.pow(((x - shiftHotSpot)/16),2) )
+		//		+ ( pointTwo*2*((x - shiftHotSpot)/16)*(1-((x - shiftHotSpot)/16)) )
+		//		+ ( pointThree*Math.pow((1-((x - shiftHotSpot)/16)),2) )
+		//		);
+		//alert(atPoint);
+
+		//Cubic Bézier curves 
+		atPoint = parseInt(
+				( Math.pow((1-(( x - shiftHotSpot)/colorSeletedFor.length)),3)*pointThree )
+				+ ( 3*Math.pow((1-(( x - shiftHotSpot)/colorSeletedFor.length)),2)*(( x - shiftHotSpot)/colorSeletedFor.length)*pointTwo )
+				+ ( 3*(1-(( x - shiftHotSpot)/colorSeletedFor.length))*Math.pow((( x - shiftHotSpot)/colorSeletedFor.length),2)*pointFour )
+				+ ( Math.pow((( x - shiftHotSpot)/colorSeletedFor.length),3)*pointOne )
+				);
+		//alert(atPoint);
+
+		for(var y=0 ; y!=32 ; ++y){
+			if( y == atPoint || (y-1) == atPoint || (y-2) == atPoint || (y+1) == atPoint || (y+2) == atPoint || (y-3) == atPoint || (y+3) == atPoint || (y-4) == atPoint || (y+4) == atPoint ){// || (y-3) == atPoint || (y+3) == atPoint || (y-4) == atPoint || (y+4) == atPoint
+				holdSection.push(true);
+			}else{
+				holdSection.push(false);
+			}
+		}
+		colorSectionTable.push(holdSection);
+	}
+
+	//gets the depth of the curve for the spotlight - start  + parseInt(verticalShift)
+	depth=[];
+	for(var x=0;x!=32;++x){	
+		depth.push(0);
+		if(pointThree<x){
+			for(var y=0;y!=colorSeletedFor.length;++y){
+				depth[x]=depth[x] + 1;
+				if(colorSectionTable[y][x]){
+					break;
+				}
+			}
+		}
+	}
+
+	//shifts the curve to allow for brighter hotspot
+	for(var y=0;y!=depth.length;++y){
+		depth[y] = depth[y] + parseInt(verticalShift);
+	}
+
+	//This sets up the spotlight effect values in a 2d array
+	colorGran=[];
+	for(var x=0;x!=32;++x){	//add x/32 to give 0.0-1.0 muiltiply
+		hold=[];
+		colorLevel=100;
+		for(var y=0;y!=colorSeletedFor.length;++y){
+			if(depth[x]==y){
+				colorLevel=50;
+			}
+			hold.push(colorLevel/100 * ( (x/colorSeletedFor.length) * hotSpotIntensity + 1.0));
+			if(depth[x] > y){
+				colorLevel=colorLevel-(50/depth[x]);
+			} else {
+				colorLevel=colorLevel-(50/(colorSeletedFor.length-depth[x]));
+			}
+		}
+		colorGran.push(hold);
+	}
+
+	//bla... this will fix the spotlight numbers to 0.0-1.0
+	var hold=0;
+	for(var x=0;x!=colorGran.length;++x){
+		for(var y=0;y!=colorGran[x].length;++y){
+			if(colorGran[x][y]>hold){
+				hold=colorGran[x][y];
+			}
+		}
+	}
+
+	var checkForMax=0;
+
+	for(var x=0;x!=colorGran.length;++x){
+		for(var y=0;y!=colorGran[x].length;++y){
+			checkForMax=parseInt((colorGran[x][y]/hold) * hotSpotSeletedFor.length) + (0-Math.floor((Math.random()*(parseInt(noiseValue)+1)))) + levelAdjust;
+			if(checkForMax>=hotSpotSeletedFor.length){//this was needed as some numbers generated went out of index range. SO MUCH FUN!!!
+				checkForMax=hotSpotSeletedFor.length-1;
+			}
+			if(checkForMax<0){
+				checkForMax=0;
+			}
+			colorGran[x][y]=hotSpotSeletedFor[((hotSpotSeletedFor.length-1)-checkForMax)];
+		}
+	}
+
+	setSelectedVPLableData();
+}
+
+function collectVPLData(){
+	hotSpotSeletedFor=[];
+	var duplicateCheck=false;
+	colorGran=[];
+
+	for (var x = 0; x!=32; ++x){
+		colorGran.push(new Array(colorSeletedFor.length));
+	}
+
+	for(var x=0;x!=colorSeletedFor.length;++x){//I may need to find a better way to handel this...
+		for(var y=0;y!=32;++y){
+			duplicateCheck=false;
+			colorGran[y][x]=vplData[y][colorSeletedFor[x]];
+			for(var z=0;z!=hotSpotSeletedFor.length;++z){
+				if(vplData[y][colorSeletedFor[x]] == hotSpotSeletedFor[z]){
+					duplicateCheck=true;
+					break;//this may cut down how expensive this is...
+				}
+			}
+			if(!duplicateCheck){
+				hotSpotSeletedFor.push(vplData[y][colorSeletedFor[x]]);
+			}
+			
+		}
+	}
+	//alert(colorGran);
+	setSelectedHotSpotTable();
+}
+
+function showVPL(){
+	collectVPLData();
+	useSelectedGranColors=false;
+	setSelectedVPLableData();
+}
+
+function showCurveOnOff(){
+	if(showCurve){
+		showCurve=false;
+	} else{
+		showCurve=true;
+	}
+	setSelectedVPLableData();
+}
+
+function useBrushOnOff(){
+	if(holdBrightBrushOnOff){
+		holdBrightBrushOnOff = false;
+		document.getElementById("brushOnOff").style.backgroundColor=holdBrightBrushColor;
+	} else {
+		holdBrightBrushOnOff = true;
+		document.getElementById("brushOnOff").style.backgroundColor="red";
+		holdColorBrushOnOff = false;
+		document.getElementById("colorOnOff").style.backgroundColor=holdColorBrushColor;
+	}
+}
+
+function useColorOnOff(){
+	if(holdColorBrushOnOff){
+		holdColorBrushOnOff = false;
+		document.getElementById("colorOnOff").style.backgroundColor=holdColorBrushColor;
+	} else {
+		holdColorBrushOnOff = true;
+		document.getElementById("colorOnOff").style.backgroundColor="red";
+		holdBrightBrushOnOff = false;
+		document.getElementById("brushOnOff").style.backgroundColor=holdBrightBrushColor;
+	}
+}
+
+function changeSelectionOptionBColor(){
+	var value = parseInt(document.getElementById("selectedColorPaint").value);
+	document.getElementById("selectedColorPaint").style.backgroundColor = "rgb(" + colorData[value][0]  + " , " + colorData[value][1] + " , " + colorData[value][2] + ")";
+}
+
+function makeColorOption(){
+	var select = "<select onchange='changeSelectionOptionBColor()' id='selectedColorPaint' style='width:75%;background-color: rgb(" + colorData[0][0]  + " , " + colorData[0][1] + " , " + colorData[0][2] + ");'>";
+	//for(var x=0;x!=hotSpotSeletedFor.length;++x){
+	//	select = select + "<option value='" + x + "' style='background-color: rgb(" + colorData[hotSpotSeletedFor[x]][0]  + " , " + colorData[hotSpotSeletedFor[x]][1] + " , " + colorData[hotSpotSeletedFor[x]][2] + ");'>" + hotSpotSeletedFor[x] + "</option>";
+	//}
+	for(var x=0;x!=colorData.length;++x){
+		select = select + "<option value='" + x + "' style='background-color: rgb(" + colorData[x][0]  + " , " + colorData[x][1] + " , " + colorData[x][2] + ");'></option>";
+	}
+	select = select + "</select>";
+	document.getElementById("selectColorPaint").innerHTML=select;
+}
+
+function brightBrush(_color, _section){
+	var amount = -1 * parseInt(document.getElementById("brushStrength").value);
+	//var size = parseInt(document.getElementById("brushSize").value);
+	var holdIndex=0;
+	var indexCheck=0;
+	var holdHotSpotIndex=colorGran[_section][_color];
+
+	for(var x=0;x!=hotSpotSeletedFor.length;++x){
+		if(hotSpotSeletedFor[x] == holdHotSpotIndex){
+			holdIndex=x;
+			break;
+		}
+	}
+
+	indexCheck=holdIndex+amount;
+	if(indexCheck >= hotSpotSeletedFor.length){
+		indexCheck=hotSpotSeletedFor.length-1;
+	}
+	if(indexCheck < 0){
+		indexCheck=0;
+	}
+
+	colorGran[_section][_color] = hotSpotSeletedFor[indexCheck];
+	setSelectedVPLableData();
+}
+
+function colorBrush(_color, _section){
+	var value = parseInt(document.getElementById("selectedColorPaint").value);
+	colorGran[_section][_color] = value;
+	setSelectedVPLableData();
+}
+
+function shadeBrush(_color, _section){
+	if(holdBrightBrushOnOff){
+		brightBrush(_color, _section);
+	}
+	if(holdColorBrushOnOff){
+		colorBrush(_color, _section);
+	}
+}
+
+function setSelectedVPLableData(){
+	//adds the color table for html - start
+	var sectionTable="<table style='border-spacing: 0px 0px;'>";
+	var hold="";
+	var widthColor = document.getElementById("topBar").offsetWidth / colorSeletedFor.length; //16
+
+	for(var x=0;x!=colorSeletedFor.length;++x){
+		hold="<tr>";
+		for(var y=0;y!=32;++y){	
+			if(depth[y]==x && showCurve){//colorSectionTable[x][y]
+				hold= hold + "<td onclick='shadeBrush(" + x + "," + y + ")' style='border: 1px solid black;width:" + widthColor + "px;height:8px;background-color: rgb( 150 , 0 , 0 );'></td>";
+			} else {
+				hold= hold + "<td onclick='shadeBrush(" + x + "," + y + ")' style='border: 1px solid black;width:" + widthColor + "px;height:8px;background-color: rgb( " + colorData[colorGran[y][x]][0]  + " , " + colorData[colorGran[y][x]][1] + " , " + colorData[colorGran[y][x]][2] + " );'></td>";
+			}
+		}
+		sectionTable = sectionTable + hold + "</tr>";
+	}
+	sectionTable = sectionTable + "</table>";
+	document.getElementById("dataHotSpot").innerHTML=sectionTable;
+	//adds the color table for html - end
+}
+
+function changeColorGran(){
+	topRange = document.getElementById("topBar").value;
+	bottomRange = document.getElementById("bottomBar").value;
+	verticalRange = 0; //document.getElementById("hotSpotShift").value;
+	intensityRange = document.getElementById("intensityBar").value;
+	intensity2Range = document.getElementById("intensity2Bar").value;
+	hotSpotIntensity = (document.getElementById("hotSpotShift").value / 100);
+	verticalShift = document.getElementById("verShift").value;
+	noiseValue = document.getElementById("noiseOnOff").value;
+	levelAdjust = parseInt(document.getElementById("brightnessLevel").value);
+	setUpColorGran();
+}
+
+function userSelectedColorPallet(_selectedNumber){
+	var isItSelected=false;
+
+	for(var x=0 ; x!=colorSeletedFor.length ; ++x){
+		if(_selectedNumber==colorSeletedFor[x]){
+			isItSelected=true;
+			colorSeletedFor.splice(x, 1);
+			document.getElementById("color" + _selectedNumber).style.border = "0px solid red";
+			break;
+		}
+	}
+
+	if(!isItSelected){
+		colorSeletedFor.push(_selectedNumber);
+		document.getElementById("color" + _selectedNumber).style.border = "1px solid red";
+	}
+	setUserColorTable();
+}
+
+function userSelectedColor(_selectedNumber){
+	//alert(_selectedNumber);
+	if(document.getElementById("selected").checked){
+		userSelectedColorPallet(_selectedNumber);
+	} else {
+		userSelectedHotSpot(_selectedNumber);
+	}
+}
+
+function setUserColorTable(){
+	if(colorSeletedFor.length>0){
+		var palletTable="<div style='height: 320px;overflow: scroll;overflow-x: hidden;'><table style='vertical-align: text-top;border-spacing: 0px 0px;text-align: center;width:100%;'>";
+		var hold="";
+
+		for(var x=0 ; x!=colorSeletedFor.length ; ++x){	
+			hold="<tr>";
+			hold= hold + "<td style='width:16px;height:8px;background-color: rgb(" + colorData[colorSeletedFor[x]][0] + " , " + colorData[colorSeletedFor[x]][1] + " , " + colorData[colorSeletedFor[x]][2] + " );'></td>";
+			hold= hold + "<td onclick='moveColorUp(" + x + ")' class='moveColor'>&#9650;</td>";
+			hold= hold + "<td onclick='moveColorDown(" + x + ")' class='moveColor'>&#9660;</td>";
+			hold= hold + "<td onclick='removeColor(" + x + ")' class='deleteColor'>X</td>";
+			palletTable= palletTable + hold + "</tr>";
+		}
+
+		palletTable = palletTable + "</table></div>";
+
+		document.getElementById("selectedColor").innerHTML=palletTable;
+	} else {
+		document.getElementById("selectedColor").innerHTML="Nothing<br>Selected";
+	}
+}
+
+function setSelectedColorTable(){//I think this function is not used anymore...
+	if(document.getElementById("selected").checked){
+		setUserColorTable();
+	} else {
+		setSelectedHotSpotTable();
+	}
+}
+
+function removeColor(_numberToRemove){
+	document.getElementById("color" + colorSeletedFor[_numberToRemove]).style.border = "0px solid red";
+	colorSeletedFor.splice(_numberToRemove, 1);
+	setUserColorTable();
+}
+
+function userSelectedHotSpot(_selectedNumber){
+	var isItSelected=false;
+
+	for(var x=0 ; x!=hotSpotSeletedFor.length ; ++x){
+		if(_selectedNumber==hotSpotSeletedFor[x]){
+			isItSelected=true;
+			hotSpotSeletedFor.splice(x, 1);
+			document.getElementById("color" + _selectedNumber).style.border = "0px solid red";
+			break;
+		}
+	}
+
+	if(!isItSelected){
+		hotSpotSeletedFor.push(_selectedNumber);
+		document.getElementById("color" + _selectedNumber).style.border = "1px solid red";
+	}
+
+	setSelectedHotSpotTable();
+}
+
+function setSelectedHotSpotTable(){
+	//makeColorOption();
+
+	if(hotSpotSeletedFor.length>0){
+		var palletTable="<div style='height: 320px;overflow: scroll;overflow-x: hidden;'><table style='vertical-align: text-top;border-spacing: 0px 0px;text-align: center;width:100%;'>";
+		var hold="";
+
+		for(var x=0 ; x!=hotSpotSeletedFor.length ; ++x){	
+			hold="<tr>";
+			hold= hold + "<td style='width:16px;height:8px;background-color: rgb(" + colorData[hotSpotSeletedFor[x]][0] + " , " + colorData[hotSpotSeletedFor[x]][1] + " , " + colorData[hotSpotSeletedFor[x]][2] + " );'></td>";
+			hold= hold + "<td onclick='moveGranUp(" + x + ")' class='moveColor'>&#9650;</td>";
+			hold= hold + "<td onclick='moveGranDown(" + x + ")' class='moveColor'>&#9660;</td>";
+			hold= hold + "<td onclick='copyGranColor(" + x + ")' class='copyColor'>&#10010;</td>";
+			hold= hold + "<td onclick='removeHotSpot(" + x + ")' class='deleteColor'>X</td>";
+			palletTable= palletTable + hold + "</tr>";
+		}
+
+		palletTable = palletTable + "</table></div>";
+
+		document.getElementById("selectedHotSpot").innerHTML=palletTable;
+	} else {
+		document.getElementById("selectedHotSpot").innerHTML="Nothing<br>Selected";
+	}
+}
+
+function removeHotSpot(_numberToRemove){
+	document.getElementById("color" + hotSpotSeletedFor[_numberToRemove]).style.border = "0px solid red";
+	hotSpotSeletedFor.splice(_numberToRemove, 1);
+	setSelectedHotSpotTable();
+}
+
+function setColorTable(){
+	var palletTable="<table style='border-spacing: 0px 0px;text-align: center;width:100%;'>";
+	var hold="";
+	var totalCounter=0;
+	var isSelected=false;
+
+	if(document.getElementById("selected").checked){
+		document.getElementById("titleColors").className="selectedColor";
+		document.getElementById("titleGradient").className="notSelectedColor";
+	} else {
+		document.getElementById("titleGradient").className="selectedColor";
+		document.getElementById("titleColors").className="notSelectedColor";
+	}
+
+	for(var x=0;x!=32;++x){	
+		hold="<tr>";
+		for(var y=0;y!=8;++y){
+			isSelected=false;
+			if(document.getElementById("selected").checked){
+				for(var z=0 ; z!=colorSeletedFor.length ; ++z){
+					if((y*32+x) == colorSeletedFor[z]){
+						isSelected=true;
+					}
+				}
+			} else {
+				for(var z=0 ; z!=hotSpotSeletedFor.length ; ++z){
+					if((y*32+x) == hotSpotSeletedFor[z]){
+						isSelected=true;
+					}
+				}
+			}
+			hold= hold + "<td onclick='userSelectedColor(" + (y*32+x) + ")' style='cursor:pointer;min-width:16px;width:16px;height:8px;background-color: rgb(" + colorData[y*32+x][0] + " , " + colorData[y*32+x][1] + " , " + colorData[y*32+x][2] + " );'>"
+					+ "<div style='width:95%;height:100%;border:" 
+					+ ((isSelected)?"1px solid red;":"0px solid red;")
+					+ "' id='color" + (y*32+x) + "'>"
+					+ "</div></td>";
+			++totalCounter;
+		}
+		palletTable= palletTable + hold + "</tr>";
+	}
+
+	palletTable = palletTable + "</table>";
+
+	document.getElementById("palletArea").innerHTML=palletTable;
+}
+
+function selectedColor(){
+	document.getElementById("selectedColor").innerHTML="";
+}
+
+function resetColorData(){
+	colorData=[];
+
+	for(var x=0;x!=originalColorData.length;++x){
+		colorData.push(originalColorData[x].slice(0));
+	}
+
+	changeColorGran();
+	setColorTable();
+	makeColorOption();
+	buildVPLWheel();
+	animate();
+}
+
+function getColorDataFromHTMLDIV(){
+	var holdColorData = document.getElementById("data").innerHTML.split(",");
+	var redColor=0;
+	var greenColor=0;
+	var blueColor=0;
+	var muiltValue=2.587;
+	colorData=[];
+
+	for(var x=0;x!=holdColorData.length;++x){
+		redColor=parseInt(parseInt( holdColorData[x], 16) * muiltValue);
+		greenColor=parseInt(parseInt( holdColorData[++x], 16) * muiltValue);
+		blueColor=parseInt(parseInt( holdColorData[++x], 16) * muiltValue);
+
+		colorData.push([redColor,greenColor,blueColor]);
+	}
+
+	if(!originalColorLoaded){
+		originalColorLoaded=true;
+		for(var x=0;x!=colorData.length;++x){
+			originalColorData.push(colorData[x].slice(0));
+		}
+	}
+
+	holdColorData=[];
+	document.getElementById("data").innerHTML="";
+}
+
+function resetVPLData(){
+	vplData=[];
+
+	for(var x=0;x!=originalVplData.length;++x){
+		vplData.push(originalVplData[x].slice(0));
+	}
+
+	changeColorGran();
+	buildVPLWheel();
+	animate();
+}
+
+function getVLPDataFromHTMLDIV(){
+	var holdvplData = document.getElementById("dataVPL").innerHTML.split("$");
+	var holdSection = [];
+	var redColor=0;
+	var holdSplit=[];
+	vplData=[];
+
+	for(var x=0;x!=holdvplData.length-1;++x){
+		holdSplit = holdvplData[x].split(",");
+		holdSection = [];
+		for(var y=0;y!=holdSplit.length-1;++y){
+			holdSection.push(parseInt(holdSplit[y]));
+		}
+		vplData.push(holdSection);
+	}
+
+	if(!originalVplLoaded){
+		originalVplLoaded=true;
+		for(var x=0;x!=vplData.length;++x){
+			originalVplData.push(vplData[x].slice(0));
+		}
+	}
+	
+	holdSplit=[];
+	holdvplData =[];
+	document.getElementById("dataVPL").innerHTML="";
+}
+
+//**********************Start of Three.js Render Stuff*********************************
+//*************************************************************************************
+
+function buildVPLWheel(){
+	var radius = 1.5;
+	var segments = 256;
+	var pointSize = 0.15;
+	var geometry = new THREE.Geometry();
+	var sectionSpace=0;
+	var numberOfSections=16;
+	var totalCounter=0;
+	var numSections=31;
+	var finalColor;
+	var color;
+
+	for(var sections=0 ; sections!=numberOfSections ; ++sections){
+		radius = radius + 0.00;
+		sectionSpace = sectionSpace + 0.05;
+
+		for(var counter=0 ; counter!=segments ; ++counter){
+			geometry.vertices.push( new THREE.Vector3( 
+							sectionSpace , 
+							Math.cos(2 * Math.PI * counter / segments) * radius , 
+							Math.sin(2 * Math.PI * counter / segments) * radius
+						));
+
+			geometry.vertices.push( new THREE.Vector3( 
+							(2*numberOfSections*0.05) - sectionSpace  + 0.05 , 
+							Math.cos(2 * Math.PI * counter / segments) * radius , 
+							Math.sin(2 * Math.PI * counter / segments) * radius
+						));
+
+			finalColor = "rgb(" + colorData[vplData[sections][counter]][0] + "," + colorData[vplData[sections][counter]][1] + "," + colorData[vplData[sections][counter]][2] + ")";
+			color = new THREE.Color( finalColor );
+			geometry.colors.push( color );
+
+			finalColor = "rgb(" + colorData[vplData[numSections][counter]][0] + "," + colorData[vplData[numSections][counter]][1] + "," + colorData[vplData[numSections][counter]][2] + ")";
+			color = new THREE.Color(finalColor);
+			geometry.colors.push( color );
+		}
+		--numSections;
+	}
+
+	var material = new THREE.PointCloudMaterial( { size: pointSize, vertexColors: THREE.VertexColors } );
+	var voxel = new THREE.PointCloud( geometry, material );
+	voxel.position.x=-numberOfSections*0.06;
+	scene = new THREE.Scene();
+
+	scene.add( voxel );
+}
+
+//var controlsController = {};
+
+//var gui = new dat.GUI();
+
+//var flh = gui.addFolder('FLH Locator');
+	//flh.add(controlsController, 'flhOnOff').name("On/Off");
+	//flh.add(controlsController, 'zMove', 0.0, 10.0, 0.01).name("Move X");
+	//flh.open();
+
+var scene = new THREE.Scene();
+
+var renderer = new THREE.WebGLRenderer();
+	renderer.setSize(window.innerWidth/2, window.innerHeight/2);
+	renderer.setClearColor( 0x3d3d5c, 1 );
+	document.getElementById("renderArea").appendChild(renderer.domElement);
+	//document.body.appendChild(renderer.domElement);
+
+var camera = new THREE.PerspectiveCamera(45, (window.innerWidth/2) / (window.innerHeight/2), 1, 1000);
+	camera.position.x = 0;
+	camera.position.y = 0;
+	camera.position.z = 5;
+
+window.addEventListener( 'resize', onWindowResize, false );
+
+function onWindowResize(){
+	camera.aspect = (window.innerWidth/2) / (window.innerHeight/2);
+	camera.updateProjectionMatrix();
+	renderer.setSize( (window.innerWidth/2), (window.innerHeight/2) );
+	draw();
+}
+
+var controls = new THREE.OrbitControls( camera, renderer.domElement );
+	controls.damping = 0.2;
+	controls.addEventListener( 'change', draw );
+
+function animate(){
+	//requestAnimationFrame(function(){animate();});
+	draw();
+}
+
+function draw(){
+	renderer.render(scene, camera);
+}
+
+//************************End of Three.js Render Stuff*********************************
+//*************************************************************************************
+
+
+//********************The function calls that start all the fun************************
+//*************************************************************************************
+
+setTimeout(function(){//wait for it to load... I hate my life... >_<
+	getColorDataFromHTMLDIV();
+	getVLPDataFromHTMLDIV();
+	buildVPLWheel();
+	setColorTable();
+	makeColorOption();
+	animate();
+},timeDelay); 
+
+</script>
+
+</body>
+</html>	
